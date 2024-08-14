@@ -120,6 +120,20 @@ const axios = require('axios');
             console.error('Erro ao criar a VIEW:', error);
         }
     }
+
+    async function calculatePopulationWithSelect() {
+        try {
+            const result = await db.query(`
+                SELECT SUM(nation_population) AS total_population
+                FROM ${DATABASE_SCHEMA}.api_data_view
+                WHERE current_year IN ('"2020"', '"2019"', '"2018"');
+            `);
+
+            console.log('Soma da população (SELECT):', result[0].total_population);
+        } catch (error) {
+            console.error('Erro ao calcular a população com SELECT:', error);
+        }
+    }
     
     try {
         //URL da api a consumir
@@ -139,6 +153,9 @@ const axios = require('axios');
 
         //Cria uma View no DB;
         await createView();
+        
+        //Realiza uma Query na View;
+        await calculatePopulationWithSelect();
 
     } catch (e) {
         console.log(e.message)
