@@ -77,7 +77,7 @@ const axios = require('axios');
     }
 
     //Função para salvar os dados no database
-    async function saveData(data) {
+    async function saveDataToDB(data) {
         try {
             await db[DATABASE_SCHEMA].api_data.insert({
                 doc_record: JSON.stringify(data),
@@ -100,7 +100,7 @@ const axios = require('axios');
         await migrationUp();
 
         //Salva os dados no DB;
-        await saveData(payload);
+        await saveDataToDB(payload);
 
     } catch (e) {
         console.log(e.message)
