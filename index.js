@@ -89,8 +89,25 @@ const axios = require('axios');
         }
     }
 
+    // Função para calcular a soma da população em memória
+    async function calculatePopulationInMemory(data) {
+        try {
+            const payload = data;
+            const years = ['2020', '2019', '2018'];
+            const totalPopulation = payload
+                .filter(item => years.includes(item.Year))
+                .reduce((total, item) => total + item.Population, 0); 
+            
+            console.log('Soma da população (em memória):', totalPopulation);
+        } catch (error) {
+            console.error('Erro ao calcular a população em memória:', error);
+        }
+    }
 
+
+    
     try {
+        //URL da api a consumir
         const url = "https://datausa.io/api/data?drilldowns=Nation&measures=Population";
         
         //Consumo da API;
@@ -98,6 +115,9 @@ const axios = require('axios');
         
         //Execução das migrations;
         await migrationUp();
+
+        //Cálculo em memória;
+        await calculatePopulationInMemory(payload);
 
         //Salva os dados no DB;
         await saveDataToDB(payload);
