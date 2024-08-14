@@ -1,6 +1,7 @@
 const { DATABASE_SCHEMA, DATABASE_URL, SHOW_PG_MONITOR } = require('./config');
 const massive = require('massive');
 const monitor = require('pg-monitor');
+const axios = require('axios');
 
 // Call start
 (async () => {
@@ -62,6 +63,8 @@ const monitor = require('pg-monitor');
         });
     };
 
+
+    //Função para consumir a api
     async function fetchData(url) {
         try {
             const response = await axios.get(url);
@@ -73,6 +76,18 @@ const monitor = require('pg-monitor');
         }
     }
 
+    //Função para salvar os dados no database
+    async function saveData(data) {
+        try {
+            await db[DATABASE_SCHEMA].api_data.insert({
+                doc_record: JSON.stringify(data),
+            })
+
+            console.log('Dados inseridos com sucesso!');
+        } catch (error) {
+            console.error('Erro ao salvar os dados:', error);
+        }
+    }
 
 
     try {
@@ -83,6 +98,9 @@ const monitor = require('pg-monitor');
         
         //Execução das migrations;
         await migrationUp();
+
+        //Salva os dados no DB;
+        await saveData(payload);
 
     } catch (e) {
         console.log(e.message)
