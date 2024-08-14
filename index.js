@@ -53,7 +53,7 @@ const monitor = require('pg-monitor');
 
             //cria as estruturas necessarias no db (schema)
             await execFileSql(DATABASE_SCHEMA, 'table');
-            await execFileSql(DATABASE_SCHEMA, 'view');
+            // await execFileSql(DATABASE_SCHEMA, 'view');
 
             console.log(`reload schemas ...`)
             await db.reload();
@@ -62,20 +62,27 @@ const monitor = require('pg-monitor');
         });
     };
 
+    async function fetchData(url) {
+        try {
+            const response = await axios.get(url);
+            const { data } = response.data;
+
+            return data;
+        } catch (error) {
+            console.error('Erro ao consumir a API:', error);
+        }
+    }
+
+
+
     try {
+        const url = "https://datausa.io/api/data?drilldowns=Nation&measures=Population";
+        
+        //Consumo da API;
+        const payload = await fetchData(url);
+        
+        //Execução das migrations;
         await migrationUp();
-
-        //exemplo de insert
-        const result1 = await db[DATABASE_SCHEMA].api_data.insert({
-            doc_record: { 'a': 'b' },
-        })
-        console.log('result1 >>>', result1);
-
-        //exemplo select
-        const result2 = await db[DATABASE_SCHEMA].api_data.find({
-            is_active: true
-        });
-        console.log('result2 >>>', result2);
 
     } catch (e) {
         console.log(e.message)
