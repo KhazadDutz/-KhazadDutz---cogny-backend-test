@@ -54,7 +54,7 @@ const axios = require('axios');
 
             //cria as estruturas necessarias no db (schema)
             await execFileSql(DATABASE_SCHEMA, 'table');
-            // await execFileSql(DATABASE_SCHEMA, 'view');
+            await execFileSql(DATABASE_SCHEMA, 'view');
 
             console.log(`reload schemas ...`)
             await db.reload();
@@ -79,11 +79,11 @@ const axios = require('axios');
     //Função para salvar os dados no database
     async function saveDataToDB(data) {
         try {
-            await db[DATABASE_SCHEMA].api_data.insert({
+            const result = await db[DATABASE_SCHEMA].api_data.insert({
                 doc_record: JSON.stringify(data),
             })
 
-            console.log('Dados inseridos com sucesso!');
+            console.log(result, 'Dados inseridos com sucesso!');
         } catch (error) {
             console.error('Erro ao salvar os dados:', error);
         }
@@ -108,25 +108,28 @@ const axios = require('axios');
     async function createView() {
         try {
             await db.query(`
-                CREATE OR REPLACE VIEW ${DATABASE_SCHEMA}.api_data_view AS
+                CREATE OR REPLACE VIEW ${DATABASE_SCHEMA}.vw_population_sum AS
+                WITH doc_records AS (
                 SELECT
-                    (jsonb_array_elements(doc_record) -> 'Nation')::TEXT AS nation_name,
-                    (jsonb_array_elements(doc_record) -> 'Year')::TEXT AS current_year,
-                    (jsonb_array_elements(doc_record) -> 'Population')::INT AS nation_population
-                FROM ${DATABASE_SCHEMA}.api_data;
+                    (jsonb_array_elements(doc_record) ->> 'ID Year')::INT AS year,
+                    (jsonb_array_elements(doc_record) ->> 'Population')::INT AS population
+                FROM ${DATABASE_SCHEMA}.api_data
+                )
+                SELECT 
+                SUM(population) AS total_population
+                FROM doc_records
+                WHERE year IN (2020, 2019, 2018);
             `);
             console.log('VIEW criada com sucesso!');
         } catch (error) {
             console.error('Erro ao criar a VIEW:', error);
         }
-    }
-
+    }    
+    
     async function calculatePopulationWithSelect() {
         try {
             const result = await db.query(`
-                SELECT SUM(nation_population) AS total_population
-                FROM ${DATABASE_SCHEMA}.api_data_view
-                WHERE current_year IN ('"2020"', '"2019"', '"2018"');
+                SELECT * FROM ${DATABASE_SCHEMA}.vw_population_sum;
             `);
 
             console.log('Soma da população (SELECT):', result[0].total_population);
@@ -134,16 +137,17 @@ const axios = require('axios');
             console.error('Erro ao calcular a população com SELECT:', error);
         }
     }
-    
+
     try {
+        
+        //Execução das migrations;
+        await migrationUp();
+        
         //URL da api a consumir
         const url = "https://datausa.io/api/data?drilldowns=Nation&measures=Population";
         
         //Consumo da API;
         const payload = await fetchData(url);
-        
-        //Execução das migrations;
-        await migrationUp();
 
         //Cálculo em memória;
         await calculatePopulationInMemory(payload);
