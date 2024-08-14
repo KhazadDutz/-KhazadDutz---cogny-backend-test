@@ -104,7 +104,22 @@ const axios = require('axios');
         }
     }
 
-
+    //Função para criar a VIEW
+    async function createView() {
+        try {
+            await db.query(`
+                CREATE OR REPLACE VIEW ${DATABASE_SCHEMA}.api_data_view AS
+                SELECT
+                    (jsonb_array_elements(doc_record) -> 'Nation')::TEXT AS nation_name,
+                    (jsonb_array_elements(doc_record) -> 'Year')::TEXT AS current_year,
+                    (jsonb_array_elements(doc_record) -> 'Population')::INT AS nation_population
+                FROM ${DATABASE_SCHEMA}.api_data;
+            `);
+            console.log('VIEW criada com sucesso!');
+        } catch (error) {
+            console.error('Erro ao criar a VIEW:', error);
+        }
+    }
     
     try {
         //URL da api a consumir
@@ -121,6 +136,9 @@ const axios = require('axios');
 
         //Salva os dados no DB;
         await saveDataToDB(payload);
+
+        //Cria uma View no DB;
+        await createView();
 
     } catch (e) {
         console.log(e.message)
